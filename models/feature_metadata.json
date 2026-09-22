@@ -1,0 +1,24 @@
+{
+  "model_name": "xgboost",
+  "mode": "ml",
+  "features": [
+    "road_length_m",
+    "speed_kph",
+    "elevation_m",
+    "flood_depth_m",
+    "flood_hazard_class",
+    "road_class_code",
+    "distance_to_evac_m"
+  ],
+  "target": "risk_score",
+  "metrics": {
+    "mae": 0.00028179197043794543,
+    "mse": 4.3659625776746744e-07,
+    "rmse": 0.000660754309685126,
+    "r2": 0.9999953699519724
+  },
+  "sample_count": 148495,
+  "study_area": "Metro Manila",
+  "random_seed": 42,
+  "trained_at": "2026-09-22T12:20:41.211256+00:00"
+}
