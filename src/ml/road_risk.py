@@ -3,8 +3,9 @@ Road-risk and passability predictive modeling for ResQPH.
 
 Combines flood hazard layers, road classification, elevation, and distance to
 evacuation centers to generate a probabilistic passability risk score in [0, 1].
-Supports machine-learning models (Random Forest, XGBoost, Logistic Regression)
-with an automatic rule-based fallback when training samples are insufficient.
+Supports multiple ML models (Linear Regression, Decision Tree, Random Forest,
+XGBoost, KNN, Logistic Regression) with an automatic rule-based fallback when
+training samples are insufficient.
 """
 from __future__ import annotations
 
@@ -19,6 +20,8 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 from src.etl.load import get_processed_roads
 from src.etl.pipeline import run_pipeline
@@ -84,14 +87,39 @@ class ProbabilisticClassifierWrapper:
 
 
 def build_model(model_name: str):
-    """Instantiate the ML estimator with global hyperparameters."""
+    """
+    Instantiate the ML estimator with global hyperparameters.
+
+    Supported models:
+      - linear         : Linear Regression (baseline; target is linear)
+      - decision_tree  : single Decision Tree
+      - random_forest  : Random Forest Regressor
+      - xgboost        : XGBoost Regressor
+      - knn            : K-Nearest Neighbors Regressor
+      - logreg         : Logistic Regression (wrapped as probability output)
+    """
     params = config.MODEL_PARAMS.get(model_name, {})
+
+    if model_name == "linear":
+        from sklearn.linear_model import LinearRegression
+
+        return Pipeline([("scaler", StandardScaler()), ("model", LinearRegression())])
+
+    if model_name == "decision_tree":
+        from sklearn.tree import DecisionTreeRegressor
+
+        return DecisionTreeRegressor(
+            max_depth=12,
+            min_samples_leaf=3,
+            random_state=config.RANDOM_SEED,
+        )
+
     if model_name == "random_forest":
         from sklearn.ensemble import RandomForestRegressor
 
-        rf_params = dict(params)
-        return RandomForestRegressor(**rf_params)
-    elif model_name == "xgboost":
+        return RandomForestRegressor(**dict(params))
+
+    if model_name == "xgboost":
         import xgboost as xgb
 
         xgb_params = dict(params)
@@ -99,14 +127,26 @@ def build_model(model_name: str):
         if "eval_metric" in xgb_params and xgb_params["eval_metric"] == "logloss":
             xgb_params["eval_metric"] = "rmse"
         return xgb.XGBRegressor(**xgb_params)
-    elif model_name == "logreg":
+
+    if model_name == "knn":
+        from sklearn.neighbors import KNeighborsRegressor
+
+        return Pipeline(
+            [
+                ("scaler", StandardScaler()),
+                ("model", KNeighborsRegressor(n_neighbors=5, n_jobs=-1)),
+            ]
+        )
+
+    if model_name == "logreg":
         from sklearn.linear_model import LogisticRegression
 
         return ProbabilisticClassifierWrapper(LogisticRegression(**params))
-    else:
-        raise ValueError(
-            f"Unsupported model: {model_name}. Use random_forest, xgboost, or logreg."
-        )
+
+    raise ValueError(
+        f"Unsupported model: {model_name}. "
+        "Use linear, decision_tree, random_forest, xgboost, knn, or logreg."
+    )
 
 
 def train(
@@ -118,7 +158,7 @@ def train(
     Train a road-risk model or instantiate fallback.
 
     Args:
-        model_name: Name of model algorithm ('random_forest', 'xgboost', 'logreg').
+        model_name: Name of model algorithm. See `build_model` for options.
         export: Whether to save model and feature metadata to models/.
         data_path: Optional custom path to processed road features.
 
@@ -246,7 +286,7 @@ def main():
         "--model",
         type=str,
         default="random_forest",
-        choices=["random_forest", "xgboost", "logreg"],
+        choices=["linear", "decision_tree", "random_forest", "xgboost", "knn", "logreg"],
         help="Model architecture to train",
     )
     parser.add_argument(

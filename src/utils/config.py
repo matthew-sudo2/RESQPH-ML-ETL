@@ -130,6 +130,15 @@ FLOOD_SCENARIOS: Dict[str, Dict[str, float]] = {
 FLOOD_IMPASSABLE_DEPTH_M: float = 0.80   # depth above which a road is impassable
 
 # ---------------------------------------------------------------------------
+# Global Flood Database (real flood event labels)
+# ---------------------------------------------------------------------------
+# GEE asset: GLOBAL_FLOOD_DB/MODIS_EVENTS/V1
+# Event ID 3552 = Typhoon Ondoy (Ketsana) flood extent, 2009-09-30
+GFD_EE_COLLECTION: str = "GLOBAL_FLOOD_DB/MODIS_EVENTS/V1"
+GFD_ONDOY_EVENT_ID: int = 3552
+GFD_ONDOY_RASTER: str = "flood_events/gfd_ondoy_2009/gfd_ondoy_2009_mm.tif"
+
+# ---------------------------------------------------------------------------
 # Feature definitions (must match training + inference)
 # ---------------------------------------------------------------------------
 ROAD_RISK_FEATURES: List[str] = [
@@ -142,7 +151,8 @@ ROAD_RISK_FEATURES: List[str] = [
     "distance_to_evac_m",
 ]
 
-ROAD_RISK_TARGET: str = "risk_score"   # continuous in [0, 1]
+ROAD_RISK_TARGET: str = "risk_score"          # continuous in [0, 1] — surrogate target
+ROAD_FLOOD_TARGET: str = "flooded_ondoy_2009"  # binary — real-label target
 
 NLP_TRIAGE_LABELS: List[str] = ["low", "medium", "high", "critical"]
 
@@ -181,7 +191,7 @@ MIN_SAMPLES_FOR_ML: int = 200
 MIN_POSITIVE_CLASS_RATIO: float = 0.05
 
 # ---------------------------------------------------------------------------
-# File names
+# Input file names (raw + processed)
 # ---------------------------------------------------------------------------
 RAW_OSM_GRAPH: str = "osm_roads.graphml"
 RAW_FLOOD_LAYER: str = "flood_hazard.geojson"
@@ -191,10 +201,23 @@ RAW_REPORTS: str = "citizen_reports.csv"
 
 INTERIM_ROADS: str = "roads_segments.parquet"
 PROCESSED_ROAD_FEATURES: str = "road_features.parquet"
+PROCESSED_ROAD_FLOOD_LABELS: str = "roads_with_flood_labels.parquet"
 PROCESSED_NLP_DATA: str = "citizen_reports_clean.csv"
 
-MODEL_ROAD_RISK: str = "road_risk_model.pkl"
+# ---------------------------------------------------------------------------
+# Output model file names
+# ---------------------------------------------------------------------------
+# Surrogate: learned replica of the deterministic risk rule (fast inference).
+MODEL_ROAD_RISK: str = "road_risk_surrogate.pkl"
+
+# Classifier: real-label model trained on Typhoon Ondoy 2009 flood extent.
+MODEL_ROAD_FLOOD_CLASSIFIER: str = "road_flood_classifier.pkl"
+
+# Metadata sidecars
 MODEL_FEATURE_META: str = "feature_metadata.json"
+MODEL_FLOOD_CLASSIFIER_META: str = "flood_classifier_metadata.json"
+
+# NLP triage model directory
 MODEL_NLP_DIR: str = "nlp_triage_model"
 
 

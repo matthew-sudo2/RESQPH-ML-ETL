@@ -247,7 +247,9 @@ def build_road_features(raw: dict) -> pd.DataFrame:
     roads = compute_risk_score(roads)
 
     keep = [
-        "u", "v", "start_lat", "start_lon", "end_lat", "end_lon",
+        "u", "v",
+        "start_lat", "start_lon", "end_lat", "end_lon",
+        "mid_lat", "mid_lon",
         "road_class",
         *config.ROAD_RISK_FEATURES,
         config.ROAD_RISK_TARGET,
