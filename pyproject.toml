@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "resqph-ml-etl"
+version = "0.1.0"
+description = "ETL and Machine Learning pipeline for ResQPH flood rescue coordination"
+authors = [{ name = "ResQPH Team" }]
+readme = "README.md"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::UserWarning",
+]
+
+[tool.mypy]
+ignore_missing_imports = true
+follow_imports = "silent"
+check_untyped_defs = true
+
